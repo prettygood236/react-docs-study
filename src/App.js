@@ -1,65 +1,98 @@
-import { useState } from 'react';
-import MyButton from './components/MyButton';
-import MyButton2 from './components/MyButton2';
-import ShoppingList from './components/ShoppingList';
+import { useEffect, useState } from 'react';
 
-function AdminPanel() {
-  return <div>AdminPanel</div>;
-}
-function LoginForm() {
-  return <div>LoginForm</div>;
-}
-
-function App() {
-  const [count, setCount] = useState(0);
-  function handleClick() {
-    setCount(count + 1);
-  }
-
-  const user = {
-    name: 'Chan',
-    imageUrl: 'https://prettygood236.github.io/assets/img/logo.png',
-    imageSize: 150,
-  };
-
-  let content;
-  let isLoggedIn = false;
-  if (isLoggedIn) {
-    content = <AdminPanel />;
-  } else {
-    content = <LoginForm />;
-  }
-
+function Square({ value, onSquareClick }) {
   return (
-    <div className='App'>
-      {/* Displaying data  */}
-      <h1>Welcome to my app {user.name}</h1>
-      <img
-        className='avatar'
-        src={user.imageUrl}
-        alt={'Photo of' + user.name}
-        style={{ width: user.imageSize, height: user.imageSize }}
-      />
-
-      {/* each button “remembers” its own count state and doesn’t affect other buttons. */}
-      <h1>Counters that update separately</h1>
-      <MyButton />
-      <MyButton />
-      {/* Sharing data between components  */}
-      <h1>Counters that update together</h1>
-      <MyButton2 count={count} onClick={handleClick} />
-      <MyButton2 count={count} onClick={handleClick} />
-      {/* Conditional rendering Case 1 */}
-      {content}
-      {/* Conditional rendering Case 2 */}
-      {isLoggedIn ? <AdminPanel /> : <LoginForm />}
-      {/* Conditional rendering Case 3 (When you don’t need the else branch) */}
-      {isLoggedIn && <AdminPanel />}
-
-      {/* Rendering lists  */}
-      <ShoppingList />
-    </div>
+    <button className='square' onClick={onSquareClick}>
+      {value}
+    </button>
   );
 }
 
-export default App;
+function Board({ xIsNext, squares, onPlay }) {
+  function handleClick(index) {
+    if (calculateWinner(squares) || squares[index]) {
+      return;
+    }
+    if (squares[index] === null) {
+      const nextSquares = squares.slice();
+      nextSquares[index] = xIsNext ? 'O' : 'X';
+      onPlay(nextSquares);
+    }
+  }
+  function calculateWinner(squares) {
+    const lines = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6],
+    ];
+    for (let i = 0; i < lines.length; i++) {
+      const [a, b, c] = lines[i];
+      if (
+        squares[a] &&
+        squares[a] === squares[b] &&
+        squares[a] === squares[c]
+      ) {
+        return true;
+      }
+    }
+    return null;
+  }
+
+  const winner = calculateWinner(squares);
+  let status;
+  if (winner) {
+    status = 'Winner: ' + winner;
+  } else {
+    status = 'Next player: ' + (xIsNext ? 'O' : 'X');
+  }
+
+  return (
+    // React components need to return a single JSX element and not multiple adjacent JSX elements like two buttons.
+    <>
+      <div className='status'>{status}</div>
+      <div className='board-row'>
+        <Square value={squares[0]} onSquareClick={() => handleClick(0)} />
+        <Square value={squares[1]} onSquareClick={() => handleClick(1)} />
+        <Square value={squares[2]} onSquareClick={() => handleClick(2)} />
+      </div>
+      <div className='board-row'>
+        <Square value={squares[3]} onSquareClick={() => handleClick(3)} />
+        <Square value={squares[4]} onSquareClick={() => handleClick(4)} />
+        <Square value={squares[5]} onSquareClick={() => handleClick(5)} />
+      </div>
+      <div className='board-row'>
+        <Square value={squares[6]} onSquareClick={() => handleClick(6)} />
+        <Square value={squares[7]} onSquareClick={() => handleClick(7)} />
+        <Square value={squares[8]} onSquareClick={() => handleClick(8)} />
+      </div>
+    </>
+  );
+}
+
+export default function Game() {
+  const [xIsNext, setXIsNext] = useState(true);
+  const [history, setHistory] = useState([Array(9).fill(null)]);
+  const currentSquares = history[history.length - 1];
+  function handlePlay(nextSquares) {
+    setHistory([...history, nextSquares]);
+    setXIsNext(!xIsNext);
+  }
+
+  return (
+    <div className='game'>
+      <div className='game-board'>
+        <Board
+          xIsNext={xIsNext}
+          squares={currentSquares}
+          onPlay={() => handlePlay()}
+        />
+      </div>
+      <div className='game-info'></div>
+    </div>
+  );
+}
